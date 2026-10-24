@@ -29,7 +29,7 @@ docker run -d --name sast-agent --restart unless-stopped --read-only --tmpfs /sc
   --cap-drop ALL --security-opt no-new-privileges --memory 3g \
   -v sast-agent-data:/data -v "$PWD/openasy-agent-kek:/run/secrets/openasy-agent-kek:ro" \
   -e SAST_URL=https://sast.example.com -e SAST_ENROLL_TOKEN=ose_... \
-  ghcr.io/openasy/sast-agent:0.5.0
+  ghcr.io/openasy/sast-agent:0.6.0
 ```
 
 The agent needs to reach SAST and the forge (`github.com`, or your GitHub Enterprise address) and nothing else; give

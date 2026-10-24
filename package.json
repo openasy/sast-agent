@@ -1,6 +1,6 @@
 {
   "name": "@openasy/sast-agent",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "OpenAsy SAST agent: clones repositories sast gives it into memory, scans them with Opengrep and sends back what it finds. sast holds no code.",
   "license": "AGPL-3.0-only",
