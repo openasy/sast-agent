@@ -1,0 +1,23 @@
+rules:
+  - id: openasy.java.sql-injection
+    message: A SQL query is built from data. Use a PreparedStatement with ? placeholders.
+    severity: ERROR
+    languages: [java]
+    metadata: { cwe: "CWE-89", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: (java.sql.Statement $S).$M($Q, ...)
+          - pattern: (Statement $S).$M($Q, ...)
+          - pattern: $C.prepareStatement($Q, ...)
+          - pattern: $EM.createQuery($Q, ...)
+          - pattern: $EM.createNativeQuery($Q, ...)
+          - pattern: $JDBC.queryForList($Q, ...)
+          - pattern: $JDBC.update($Q, ...)
+      - metavariable-pattern:
+          metavariable: $Q
+          pattern-either:
+            - pattern: '"..." + $V'
+            - pattern: String.format(...)
+      - metavariable-regex:
+          metavariable: $Q
+          regex: (?i).*\b(select|insert|update|delete|where)\b

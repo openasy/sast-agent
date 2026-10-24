@@ -1,0 +1,9 @@
+rules:
+  - id: openasy.go.tls-verification-off
+    message: TLS certificates are not checked, so anyone in the path can read and change the traffic.
+    severity: ERROR
+    languages: [go]
+    metadata: { cwe: "CWE-295", category: security }
+    pattern-either:
+      - pattern: "tls.Config{..., InsecureSkipVerify: true, ...}"
+      - pattern: $C.InsecureSkipVerify = true

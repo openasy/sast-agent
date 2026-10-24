@@ -1,0 +1,10 @@
+rules:
+  - id: openasy.java.unsafe-deserialization
+    message: Data is turned into Java objects with ObjectInputStream, which can run code. Use a data format such as JSON, or an allow-list filter.
+    severity: ERROR
+    languages: [java]
+    metadata: { cwe: "CWE-502", category: security }
+    pattern-either:
+      - pattern: (ObjectInputStream $IN).readObject()
+      - pattern: new ObjectInputStream(...).readObject()
+      - pattern: new XMLDecoder(...)

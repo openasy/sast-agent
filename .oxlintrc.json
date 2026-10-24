@@ -1,0 +1,4 @@
+{
+  "extends": ["./node_modules/@openasy/code-style/oxlint.json"],
+  "ignorePatterns": ["rules/**"]
+}

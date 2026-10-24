@@ -1,0 +1,20 @@
+rules:
+  - id: openasy.javascript.command-injection
+    message: A shell command is built from data. Pass the arguments as a list to execFile or spawn, without a shell.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata: { cwe: "CWE-78", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: $CP.exec($CMD, ...)
+          - pattern: $CP.execSync($CMD, ...)
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: "$CP.spawn($CMD, $ARGS, {..., shell: true, ...})"
+      - metavariable-pattern:
+          metavariable: $CMD
+          patterns:
+            - pattern-either:
+                - pattern: "`...${...}...`"
+                - pattern: '"..." + $V'
+                - pattern: $V + "..."

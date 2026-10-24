@@ -1,0 +1,21 @@
+rules:
+  - id: openasy.javascript.sql-injection
+    message: A SQL query is built from data. Use placeholders and pass the values apart, such as query("... WHERE id = ?", [id]).
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata: { cwe: "CWE-89", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query($Q, ...)
+          - pattern: $DB.execute($Q, ...)
+          - pattern: $DB.raw($Q, ...)
+          - pattern: $DB.$queryRawUnsafe($Q, ...)
+      - metavariable-pattern:
+          metavariable: $Q
+          patterns:
+            - pattern-either:
+                - pattern: "`...${...}...`"
+                - pattern: '"..." + $V'
+            - metavariable-regex:
+                metavariable: $Q
+                regex: (?i).*(select|insert|update|delete|where)\b.*

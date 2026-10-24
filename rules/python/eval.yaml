@@ -1,0 +1,12 @@
+rules:
+  - id: openasy.python.eval
+    message: Code built from data is run with eval or exec. Whoever controls the data runs code here.
+    severity: ERROR
+    languages: [python]
+    metadata: { cwe: "CWE-95", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: eval($X, ...)
+          - pattern: exec($X, ...)
+      - pattern-not: eval("...", ...)
+      - pattern-not: exec("...", ...)

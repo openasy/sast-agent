@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, "lts/**"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The release the image ships, checked the same way (ADR 0027).
+      - name: Install Opengrep
+        run: |
+          curl -fsSL -o /usr/local/bin/opengrep https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_manylinux_x86
+          echo "a66aa3278457f02b287b985a45b6762aebcaba5000f2689245fd1ed86d1456c7  /usr/local/bin/opengrep" | sha256sum -c
+          chmod +x /usr/local/bin/opengrep
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+        env:
+          OPENGREP_BIN: /usr/local/bin/opengrep
+      # Each shipped rule flags the code it must and not the code it must not (ADR 0036).
+      - run: npm run test:rules

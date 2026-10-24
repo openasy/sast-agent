@@ -1,0 +1,20 @@
+rules:
+  - id: openasy.javascript.eval
+    message: Code built from data is run with eval, new Function or a string timer. Whoever controls the data runs code here.
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata: { cwe: "CWE-95", category: security }
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: eval($X)
+              - pattern: new Function(..., $X)
+          - pattern-not: eval("...")
+          - pattern-not: new Function(..., "...")
+      # A timer runs a string as code: only one built from data is flagged.
+      - pattern: setTimeout("..." + $V, ...)
+      - pattern: setTimeout($V + "...", ...)
+      - pattern: setTimeout(`...${...}...`, ...)
+      - pattern: setInterval("..." + $V, ...)
+      - pattern: setInterval($V + "...", ...)
+      - pattern: setInterval(`...${...}...`, ...)

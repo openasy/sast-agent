@@ -1,0 +1,17 @@
+rules:
+  - id: openasy.java.command-injection
+    message: A command is built from data and run. Pass the program and its arguments apart, as a list.
+    severity: ERROR
+    languages: [java]
+    metadata: { cwe: "CWE-78", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: Runtime.getRuntime().exec($CMD, ...)
+          - pattern: new ProcessBuilder("sh", "-c", $CMD, ...)
+          - pattern: new ProcessBuilder("bash", "-c", $CMD, ...)
+      - metavariable-pattern:
+          metavariable: $CMD
+          pattern-either:
+            - pattern: '"..." + $V'
+            - pattern: $V + "..."
+            - pattern: String.format(...)

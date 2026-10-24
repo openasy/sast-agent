@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+coverage
+storybook-static
+reports
+*.tgz
+package-lock.json
+# Prose wrapped by hand, with tables Prettier would pad to their widest cell (code-style ADR 0001).
+*.md
+
+# Rule tests are flawed code on purpose, laid out for their annotations (ADR 0036).
+rules

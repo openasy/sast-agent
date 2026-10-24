@@ -1,0 +1,16 @@
+rules:
+  - id: openasy.javascript.html-from-data
+    message: HTML is built from data. Set textContent, or sanitize the HTML first.
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata: { cwe: "CWE-79", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: $EL.innerHTML = $X
+          - pattern: $EL.outerHTML = $X
+          - pattern: document.write($X)
+          - pattern: "<$TAG dangerouslySetInnerHTML={{__html: $X}} />"
+      - pattern-not: $EL.innerHTML = "..."
+      - pattern-not: $EL.innerHTML = ""
+      - pattern-not: document.write("...")
+      - pattern-not: '<$TAG dangerouslySetInnerHTML={{__html: "..."}} />'

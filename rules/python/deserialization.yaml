@@ -1,0 +1,15 @@
+rules:
+  - id: openasy.python.unsafe-deserialization
+    message: Data is turned into objects with pickle, marshal or yaml.load, which can run code. Use JSON, or yaml.safe_load.
+    severity: ERROR
+    languages: [python]
+    metadata: { cwe: "CWE-502", category: security }
+    pattern-either:
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+      - pattern: marshal.loads(...)
+      - patterns:
+          - pattern: yaml.load(...)
+          - pattern-not: yaml.load(..., Loader=yaml.SafeLoader, ...)
+          - pattern-not: yaml.load(..., Loader=yaml.CSafeLoader, ...)
+          - pattern-not: yaml.load(..., Loader=SafeLoader, ...)

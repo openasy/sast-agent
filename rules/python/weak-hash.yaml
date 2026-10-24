@@ -1,0 +1,12 @@
+rules:
+  - id: openasy.python.weak-hash
+    message: MD5 and SHA-1 are broken for security. Use SHA-256, or a password hash such as argon2 or bcrypt for passwords.
+    severity: WARNING
+    languages: [python]
+    metadata: { cwe: "CWE-328", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+      - pattern-not: hashlib.md5(..., usedforsecurity=False, ...)
+      - pattern-not: hashlib.sha1(..., usedforsecurity=False, ...)

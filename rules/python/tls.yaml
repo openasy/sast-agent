@@ -1,0 +1,11 @@
+rules:
+  - id: openasy.python.tls-verification-off
+    message: TLS certificates are not checked, so anyone in the path can read and change the traffic.
+    severity: ERROR
+    languages: [python]
+    metadata: { cwe: "CWE-295", category: security }
+    pattern-either:
+      - pattern: requests.$FN(..., verify=False, ...)
+      - pattern: httpx.$FN(..., verify=False, ...)
+      - pattern: ssl._create_unverified_context(...)
+      - pattern: $CTX.check_hostname = False

@@ -1,0 +1,19 @@
+rules:
+  - id: openasy.python.sql-injection
+    message: A SQL query is built from data. Pass the values apart, such as execute("... WHERE id = %s", (id,)).
+    severity: ERROR
+    languages: [python]
+    metadata: { cwe: "CWE-89", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: $CUR.execute($Q, ...)
+          - pattern: $CUR.executemany($Q, ...)
+          - pattern: $DB.raw($Q, ...)
+      - metavariable-pattern:
+          metavariable: $Q
+          pattern-either:
+            - pattern: f"..."
+            - pattern: '"..." % $V'
+            - pattern: '"...".format(...)'
+            - pattern: '"..." + $V'
+      - pattern-not: $CUR.execute("...", ...)

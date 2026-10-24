@@ -1,0 +1,22 @@
+rules:
+  - id: openasy.go.sql-injection
+    message: A SQL query is built from data. Pass the values as arguments, such as Query("... WHERE id = $1", id).
+    severity: ERROR
+    languages: [go]
+    metadata: { cwe: "CWE-89", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: $DB.Query($Q, ...)
+          - pattern: $DB.QueryRow($Q, ...)
+          - pattern: $DB.Exec($Q, ...)
+          - pattern: $DB.QueryContext($CTX, $Q, ...)
+          - pattern: $DB.QueryRowContext($CTX, $Q, ...)
+          - pattern: $DB.ExecContext($CTX, $Q, ...)
+      - metavariable-pattern:
+          metavariable: $Q
+          pattern-either:
+            - pattern: '"..." + $V'
+            - pattern: fmt.Sprintf("...", ...)
+      - metavariable-regex:
+          metavariable: $Q
+          regex: (?i).*\b(select|insert|update|delete|where)\b

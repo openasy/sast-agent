@@ -1,0 +1,15 @@
+rules:
+  - id: openasy.go.command-injection
+    message: A shell runs a command built from data. Run the program directly with its arguments apart.
+    severity: ERROR
+    languages: [go]
+    metadata: { cwe: "CWE-78", category: security }
+    patterns:
+      - pattern-either:
+          - pattern: exec.Command("sh", "-c", $CMD, ...)
+          - pattern: exec.Command("bash", "-c", $CMD, ...)
+          - pattern: exec.Command("/bin/sh", "-c", $CMD, ...)
+          - pattern: exec.CommandContext($CTX, "sh", "-c", $CMD, ...)
+          - pattern: exec.CommandContext($CTX, "bash", "-c", $CMD, ...)
+      - pattern-not: exec.Command($SH, "-c", "...", ...)
+      - pattern-not: exec.CommandContext($CTX, $SH, "-c", "...", ...)

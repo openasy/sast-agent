@@ -1,0 +1,16 @@
+rules:
+  - id: openasy.python.command-injection
+    message: A shell runs a command built from data. Pass the arguments as a list, without shell=True.
+    severity: ERROR
+    languages: [python]
+    metadata: { cwe: "CWE-78", category: security }
+    pattern-either:
+      - patterns:
+          - pattern: subprocess.$FN($CMD, ..., shell=True, ...)
+          - pattern-not: subprocess.$FN("...", ..., shell=True, ...)
+      - patterns:
+          - pattern-either:
+              - pattern: os.system($CMD)
+              - pattern: os.popen($CMD, ...)
+          - pattern-not: os.system("...")
+          - pattern-not: os.popen("...", ...)
