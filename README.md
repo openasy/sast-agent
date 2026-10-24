@@ -21,7 +21,7 @@ and no scanner** (ADR 0036).
 
 ## Run
 
-Add the agent in SAST under Settings, Agents. It shows a one-time enrolment token and this command:
+Add the agent in SAST under GitHub, Agents. It shows a one-time enrolment token and this command:
 
 ```bash
 openssl rand -hex 32 > openasy-agent-kek   # keep it with your backups
@@ -61,7 +61,10 @@ user may run them. Each has a test file with code it must flag (`ruleid:`) and c
 | Go | shell commands, SQL built from data, `InsecureSkipVerify` |
 | Java | `Runtime.exec` and shell commands, `ObjectInputStream` and `XMLDecoder`, SQL built from data |
 
-An install may add rule sources in SAST under Settings, Rules: public git repositories over https, fetched for each
+Rule files an install writes in SAST under Rules come with each job and are scanned with the others, and rules
+switched off there are skipped with `--exclude-rule`, whichever file they come from.
+
+An install may add rule sources in SAST under GitHub, Rule sources: public git repositories over https, fetched for each
 scan. Only YAML files with a top-level `rules:` key are used. A rule source is the install's choice and
 responsibility, including its licence; `opengrep/opengrep-rules`, for example, carries the Commons Clause.
 

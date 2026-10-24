@@ -88,6 +88,8 @@ describe("jobs from sast", () => {
     ["a commit that is not a hash", { commit: "HEAD" }],
     ["a token with a line break", { token: "a\nb" }],
     ["a rule source that is not https", { ruleSources: ["file:///etc"] }],
+    ["an own rule whose name is a path", { ownRules: [{ name: "../x", yaml: "rules: []" }] }],
+    ["a disabled rule that is an option", { disabledRules: ["--config=/etc"] }],
     ["more than 10 rule sources", { ruleSources: Array.from({ length: 11 }, (_, i) => `https://github.com/a/r${i}`) }],
   ])("refuses %s", (_, over) => {
     expect(() => checkJob({ ...job(), cloneUrl: "https://github.com/acme/web.git", ...over })).toThrow();
@@ -133,6 +135,15 @@ describe("a scan", () => {
     expect(configs.slice(1).map((c) => c.split("/").pop())).toEqual(["mine.yaml"]);
   });
 
+  it("adds the install's own rules, and skips the rules switched off", async () => {
+    const yaml = "rules:\n  - id: acme.todo\n";
+    expect(await runJob(job({ ownRules: [{ name: "todo", yaml }], disabledRules: ["openasy.javascript.eval"] }), options())).toMatchObject({ ok: true });
+    const args = fake.call().args;
+    const configs = args.filter((_, i, a) => a[i - 1] === "--config");
+    expect(configs.at(-1)!.endsWith("/own-rules/todo.yaml")).toBe(true);
+    expect(args).toContain("--exclude-rule=openasy.javascript.eval");
+  });
+
   it("says why a scan failed, without the token, and still cleans up", async () => {
     const out = await runJob(job({ cloneUrl: `file://${repo.dir}-missing` }), options());
     expect(out).toMatchObject({ ok: false });
@@ -163,6 +174,14 @@ describe("a scan", () => {
       const sarif = JSON.parse(out.ok ? out.sarif.toString("utf8") : "{}");
       const results = sarif.runs[0].results.map((r: any) => `${r.ruleId} ${r.locations[0].physicalLocation.artifactLocation.uri}`);
       expect(results).toEqual(["openasy.javascript.eval b.js"]);
+      // Switched off, the shipped rule reports nothing; an own rule reports what it matches.
+      const own = "rules:\n  - id: acme.eval-anywhere\n    pattern: eval(...)\n    message: eval\n    languages: [javascript]\n    severity: WARNING\n";
+      const again = await runJob(
+        job({ ownRules: [{ name: "eval", yaml: own }], disabledRules: ["openasy.javascript.eval"] }),
+        options({ opengrep: process.env.OPENGREP_BIN! }),
+      );
+      const ids = JSON.parse(again.ok ? again.sarif.toString("utf8") : "{}").runs[0].results.map((r: any) => r.ruleId);
+      expect(ids).toEqual(["acme.eval-anywhere"]);
     },
     120_000,
   );

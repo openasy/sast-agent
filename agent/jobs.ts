@@ -3,7 +3,7 @@
 // only through its environment, and Opengrep parses the code without running it. The clone lives in the work folder
 // (a tmpfs) for one scan and is deleted afterwards, whatever happened.
 import { spawn } from "node:child_process";
-import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export interface Job {
@@ -15,6 +15,10 @@ export interface Job {
   token: string;
   /** Git repositories of extra rules the install added, at its own responsibility; fetched for each scan. */
   ruleSources: string[];
+  /** Rule files the install wrote in sast. */
+  ownRules: Array<{ name: string; yaml: string }>;
+  /** Rule ids Opengrep skips, whichever file they come from. */
+  disabledRules: string[];
 }
 
 export type Outcome = { jobId: string; ok: true; sarif: Buffer; findings: number } | { jobId: string; ok: false; error: string };
@@ -38,6 +42,8 @@ const REPOSITORY = /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,100}$/;
 const BRANCH = /^(?!-)(?!.*\.\.)[A-Za-z0-9._/-]{1,255}$/;
 const COMMIT = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 const RULE_FILE = /\.ya?ml$/;
+const RULE_NAME = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+const RULE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/;
 const MAX_RULE_FILES = 2000;
 
 function url(v: unknown, what: string, schemes: string[]): string {
@@ -62,6 +68,17 @@ export function checkJob(raw: unknown, schemes = ["https:"]): Job {
   if (typeof j.commit !== "string" || !COMMIT.test(j.commit)) throw new Error("commit is not a commit hash");
   if (typeof j.token !== "string" || j.token.length > 1024 || /[\s]/.test(j.token)) throw new Error("token is not a token");
   if (!Array.isArray(j.ruleSources) || j.ruleSources.length > 10) throw new Error("rule sources are a list of at most 10 URLs");
+  // Older versions of sast send neither; a rule name becomes a file name, so it has no slash.
+  const own = j.ownRules ?? [];
+  if (
+    !Array.isArray(own) ||
+    own.length > 100 ||
+    own.some((r) => !r || typeof r.name !== "string" || !RULE_NAME.test(r.name) || typeof r.yaml !== "string" || r.yaml.length > 256 * 1024)
+  )
+    throw new Error("own rules are at most 100 named rule files");
+  const disabled = j.disabledRules ?? [];
+  if (!Array.isArray(disabled) || disabled.length > 500 || disabled.some((d) => typeof d !== "string" || !RULE_ID.test(d)))
+    throw new Error("disabled rules are at most 500 rule ids");
   return {
     id: j.id,
     repository: j.repository,
@@ -70,6 +87,8 @@ export function checkJob(raw: unknown, schemes = ["https:"]): Job {
     commit: j.commit,
     token: j.token,
     ruleSources: j.ruleSources.map((s, i) => url(s, `rule source ${i + 1}`, schemes)),
+    ownRules: own.map((r) => ({ name: r.name, yaml: r.yaml })),
+    disabledRules: disabled,
   };
 }
 
@@ -179,6 +198,14 @@ export async function runJob(raw: unknown, o: ScanOptions): Promise<Outcome> {
       await git(["clone", "--quiet", "--depth=1", "--no-tags", "--no-recurse-submodules", source, into], `Fetching rule source ${source}`, []);
       configs.push(...(await ruleFiles(into)));
     }
+    if (job.ownRules.length) {
+      const into = join(dir, "own-rules");
+      await mkdir(into);
+      for (const r of job.ownRules) {
+        await writeFile(join(into, `${r.name}.yaml`), r.yaml);
+        configs.push(join(into, `${r.name}.yaml`));
+      }
+    }
 
     const out = join(dir, "out.sarif");
     await run(
@@ -187,6 +214,7 @@ export async function runJob(raw: unknown, o: ScanOptions): Promise<Outcome> {
         "scan",
         "--no-rewrite-rule-ids",
         ...configs.flatMap((c) => ["--config", c]),
+        ...job.disabledRules.map((id) => `--exclude-rule=${id}`),
         `--sarif-output=${out}`,
         "--timeout=30",
         `--max-memory=${o.memoryMb}`,

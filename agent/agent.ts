@@ -41,7 +41,7 @@ export function createAgent(o: AgentOptions) {
   async function ensureEnrolled(): Promise<boolean> {
     if (o.state.secret) return true;
     if (!o.enrollToken) {
-      status.lastError = "Not enrolled: add this agent in SAST under Settings, Agents, and start it with SAST_ENROLL_TOKEN";
+      status.lastError = "Not enrolled: add this agent in SAST under GitHub, Agents, and start it with SAST_ENROLL_TOKEN";
       return false;
     }
     try {
