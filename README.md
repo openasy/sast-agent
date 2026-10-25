@@ -25,7 +25,7 @@ Add the agent in SAST under GitHub, Agents. It shows a one-time enrolment token 
 
 ```bash
 openssl rand -hex 32 > openasy-agent-kek   # keep it with your backups
-docker run -d --name sast-agent --restart unless-stopped --read-only --tmpfs /scan:size=2g \
+docker run -d --name sast-agent --restart unless-stopped --read-only --tmpfs /scan:exec,size=2g,uid=1000,gid=1000 \
   --cap-drop ALL --security-opt no-new-privileges --memory 3g \
   -v sast-agent-data:/data -v "$PWD/openasy-agent-kek:/run/secrets/openasy-agent-kek:ro" \
   -e SAST_URL=https://sast.example.com -e SAST_ENROLL_TOKEN=ose_... \
@@ -33,7 +33,7 @@ docker run -d --name sast-agent --restart unless-stopped --read-only --tmpfs /sc
 ```
 
 The agent needs to reach SAST and the forge (`github.com`, or your GitHub Enterprise address) and nothing else; give
-it a network that allows only those. The size of `/scan` is the largest repository it can clone. The agent must be
+it a network that allows only those. The size of `/scan` is the largest repository it can clone. It must allow `exec`, because Opengrep unpacks itself there and runs, and Docker mounts a tmpfs `noexec` otherwise. The agent must be
 the same version as SAST (ADR 0019).
 
 | Variable | Default | |
