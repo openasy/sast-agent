@@ -11,7 +11,7 @@ FROM opengrep-${TARGETARCH} AS opengrep
 
 # git clones the code: Debian slim with git rather than distroless. The agent has no runtime dependencies: Node runs
 # the TypeScript sources directly.
-FROM node:26.12.0-trixie-slim
+FROM node:26.12.1-trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
   && rm -rf /var/lib/apt/lists/* /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn* /usr/local/bin/yarn* \
   && mkdir -p /data /scan && chown node:node /data /scan
